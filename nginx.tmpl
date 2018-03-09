@@ -13,8 +13,13 @@
 		{{ end }}
 	{{ else if .Network }}
 		# {{ .Container.Name }}
-		server {{ .Network.IP }} down;
+		{{ if .Network.IP }}
+			server {{ .Network.IP }} down;
+		{{ else }}
+			server 127.0.0.1 down;
+		{{ end }}
 	{{ end }}
+	
 {{ end }}
 
 # If we receive X-Forwarded-Proto, pass it through; otherwise, pass along the
@@ -125,7 +130,7 @@ upstream {{ $upstream_name }} {
 	{{ range $knownNetwork := $CurrentContainer.Networks }}
 		{{ range $containerNetwork := $container.Networks }}
 			{{ if (and (ne $containerNetwork.Name "ingress") (or (eq $knownNetwork.Name $containerNetwork.Name) (eq $knownNetwork.Name "host"))) }}
-				## Can be connect with "{{ $containerNetwork.Name }}" network
+				## Can be connected with "{{ $containerNetwork.Name }}" network
 
 				{{/* If only 1 port exposed, use that */}}
 				{{ if eq $addrLen 1 }}
@@ -148,9 +153,6 @@ upstream {{ $upstream_name }} {
 
 {{/* Get the VIRTUAL_PROTO defined by containers w/ the same vhost, falling back to "http" */}}
 {{ $proto := trim (or (first (groupByKeys $containers "Env.VIRTUAL_PROTO")) "http") }}
-
-{{/* Get the NETWORK_ACCESS defined by containers w/ the same vhost, falling back to "external" */}}
-{{ $network_tag := or (first (groupByKeys $containers "Env.NETWORK_ACCESS")) "external" }}
 
 {{/* Get the NETWORK_ACCESS defined by containers w/ the same vhost, falling back to "external" */}}
 {{ $network_tag := or (first (groupByKeys $containers "Env.NETWORK_ACCESS")) "external" }}
